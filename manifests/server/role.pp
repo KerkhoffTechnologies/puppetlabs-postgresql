@@ -1,5 +1,6 @@
 # Define for creating a database role. See README.md for more information
 define postgresql::server::role(
+  $password         = false,
   $password_hash    = false,
   $createdb         = false,
   $createrole       = false,
@@ -23,8 +24,16 @@ define postgresql::server::role(
   $createdb_sql    = $createdb    ? { true => 'CREATEDB',    default => 'NOCREATEDB' }
   $superuser_sql   = $superuser   ? { true => 'SUPERUSER',   default => 'NOSUPERUSER' }
   $replication_sql = $replication ? { true => 'REPLICATION', default => '' }
+
+  if ($password != false) {
+    $_password_hash = postgresql_password($title, $password)
+  }
+
   if ($password_hash != false) {
     $environment  = "NEWPGPASSWD=${password_hash}"
+    $password_sql = "ENCRYPTED PASSWORD '\$NEWPGPASSWD'"
+  } elsif ($password != false ) {
+    $environment  = "NEWPGPASSWD=${_password_hash}"
     $password_sql = "ENCRYPTED PASSWORD '\$NEWPGPASSWD'"
   } else {
     $password_sql = ''
